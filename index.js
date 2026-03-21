@@ -35,3 +35,28 @@ bot.on('message', (msg) => {
         bot.sendMessage(chatId, `Hola ${msg.from.first_name}, recibí tu mensaje: "${textoRecibido}". Pronto aprenderé a escuchar audios.`);
     }
 });
+
+// Escuchar específicamente notas de voz
+bot.on('voice', async (msg) => {
+    const chatId = msg.chat.id;
+    
+    // Telegram guarda la nota de voz en un objeto llamado 'voice'
+    const fileId = msg.voice.file_id;
+    
+    console.log(`🎤 Nota de voz recibida. ID del archivo: ${fileId}`);
+    bot.sendMessage(chatId, 'Procesando tu nota de voz, dame un segundo...');
+
+    try {
+        // Pedimos a Telegram el enlace directo para acceder a este audio
+        const fileLink = await bot.getFileLink(fileId);
+        
+        console.log(`🔗 Enlace del audio: ${fileLink}`);
+        bot.sendMessage(chatId, `¡Tengo el audio! Aquí está el link temporal: ${fileLink}`);
+        
+        // En el siguiente paso, enviaremos este "fileLink" a la IA para que lo escuche
+        
+    } catch (error) {
+        console.error('Error al obtener el enlace del audio:', error);
+        bot.sendMessage(chatId, 'Hubo un problema al procesar el audio.');
+    }
+});
