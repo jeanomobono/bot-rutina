@@ -36,8 +36,8 @@ CREATE TABLE parametros_dialisis (
    fecha_registro                  DATE DEFAULT trunc(sysdate) NOT NULL,
    cantidad_infusiones             NUMBER NOT NULL,
    volumen_infusion_ml             NUMBER NOT NULL,
-   tiempo_permanencia_infusion_min NUMBER NOT NULL, -- En minutos
-   tiempo_total_tratamiento_horas  NUMBER NOT NULL,
+   tiempo_perman_infusion_min NUMBER NOT NULL, -- En minutos
+   tiempo_total_tratam_horas  NUMBER NOT NULL,
    tiene_ultima_infusion           VARCHAR2(1) DEFAULT 'N' CHECK ( tiene_ultima_infusion IN ( 'S',
                                                                                     'N' ) ),
    volumen_ultima_infusion_ml      NUMBER,
@@ -55,8 +55,8 @@ CREATE TABLE registro_dialisis (
     -- Parámetros de la máquina de esa noche
    cantidad_infusiones             NUMBER NOT NULL,
    volumen_infusion_ml             NUMBER NOT NULL,
-   tiempo_permanencia_infusion_min NUMBER NOT NULL, -- En minutos
-   tiempo_total_tratamiento_horas  NUMBER NOT NULL,
+   tiempo_perman_infusion_min NUMBER NOT NULL, -- En minutos
+   tiempo_total_tratam_horas  NUMBER NOT NULL,
    tiene_ultima_infusion           VARCHAR2(1) DEFAULT 'N' CHECK ( tiene_ultima_infusion IN ( 'S',
                                                                                     'N' ) ),
    volumen_ultima_infusion_ml      NUMBER,
