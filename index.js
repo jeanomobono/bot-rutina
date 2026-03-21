@@ -5,8 +5,20 @@ const TelegramBot = require('node-telegram-bot-api');
 // Obtener el token desde el archivo .env
 const token = process.env.TELEGRAM_TOKEN;
 
-// Inicializar el bot en modo "polling" (consulta a Telegram constantemente si hay mensajes nuevos)
-const bot = new TelegramBot(token, { polling: true });
+// Inicializar el bot en modo "polling" (consulta a Telegram constantemente si hay mensajes nuevos) forzando IPv4
+const bot = new TelegramBot(token, { 
+    polling: true,
+    request: {
+        agentOptions: {
+            family: 4 // Esto soluciona el AggregateError
+        }
+    }
+});
+
+// Manejador para atrapar errores de red y que no se caiga el servidor
+bot.on('polling_error', (error) => {
+    console.log(`⚠️ Advertencia de red: ${error.message}`);
+});
 
 console.log('🤖 Bot iniciado y escuchando mensajes...');
 
