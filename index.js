@@ -5,6 +5,8 @@ const axios = require('axios');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const https = require('https');
 
+const ordsBaseUrl = process.env.ORDS_BASE_URL;
+
 // Obtener el token desde el archivo .env
 const token = process.env.TELEGRAM_TOKEN;
 const geminiApiKey = process.env.GEMINI_API_KEY;
@@ -31,7 +33,7 @@ const model = genAI.getGenerativeModel({
     - Si es alimentación: {"endpoint": "alimentacion", "payload": {"cantidad_ml": numero, "metodo": "Biberon", "notas": "texto"}}
     - Si es pañales: {"endpoint": "panales", "payload": {"tipo": "Orina/Deposicion/Mixto/Seco", "notas": "texto"}}
     - Si es medicación: {"endpoint": "medicacion", "payload": {"nombre_medicamento": "texto", "dosis_ml": numero, "notas": "texto"}}
-    - Si es diálisis nocturna: {"endpoint": "dialisis", "payload": {"ultrafiltracion_ml": numero, "cantidad_infusiones": numero, "volumen_infusion_ml": numero, "tiempo_permanencia_min": numero, "tiene_ultima_infusion": "S/N", "volumen_ultima_infusion_ml": numero, "notas": "texto"}}`
+    - Si es diálisis nocturna: {"endpoint": "dialisis", "payload": {"ultrafiltracion_ml": numero, "drenaje_inicial_ml": numero, "notas": "texto"}}`
 });
 
 // Manejador para atrapar errores de red y que no se caiga el servidor
@@ -97,7 +99,36 @@ bot.on('voice', async (msg) => {
         // Validar que realmente sea un JSON antes de enviarlo
         const datosParseados = JSON.parse(jsonRespuesta);
         
-        bot.sendMessage(chatId, `¡Entendido! Esto es lo que interpreté:\n\n${JSON.stringify(datosParseados, null, 2)}`);
+        // Avisar al usuario que la IA entendió el mensaje
+        bot.sendMessage(chatId, `¡Entendido! Guardando registro de ${datosParseados.endpoint}... ⏳`);
+
+        // 6. Enviar los datos a Oracle ORDS
+        try {
+            // Extraemos a qué ruta (endpoint) debe ir y qué datos (payload) enviar
+            const endpointDestino = datosParseados.endpoint; 
+            const payload = datosParseados.payload;
+            
+            // Construimos la URL final (ej: https://.../ords/api/rutina/alimentacion/)
+            const urlFinal = `${ordsBaseUrl}${endpointDestino}/`;
+            console.log("URL final:", urlFinal);
+            console.log("Datos a enviar:", payload);
+            // Hacemos el POST a tu base de datos
+            const ordsResponse = await axios.post(urlFinal, payload, {
+                // Mantenemos esto por si tu red local también bloquea la salida a OCI
+                httpsAgent: new https.Agent({ family: 4 }) 
+            });
+
+            // ORDS devuelve un 201 Created cuando el insert es exitoso
+            if (ordsResponse.status === 201) {
+                bot.sendMessage(chatId, `✅ ¡Listo! Registro guardado exitosamente en la base de datos.`);
+            } else {
+                bot.sendMessage(chatId, `⚠️ El dato se envió, pero Oracle devolvió un estado inesperado: ${ordsResponse.status}`);
+            }
+
+        } catch (dbError) {
+            console.error('Error al contactar con Oracle ORDS:', dbError.message);
+            bot.sendMessage(chatId, `❌ Error al guardar en la base de datos. Revisa si la URL de ORDS es correcta o si la base de datos está activa.`);
+        }
 
     } catch (error) {
         console.error('Error procesando el audio:', error);
