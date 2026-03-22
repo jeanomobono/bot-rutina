@@ -37,6 +37,44 @@ const model = genAI.getGenerativeModel({
     - Si es una cita médica: {"endpoint": "citas", "payload": {"peso_kg": numero, "talla_cm": numero, "presion_arterial": "texto", "indicaciones": "texto", "especialista": "texto"}`
 });
 
+// Variables en memoria para actuar como caché
+let tokenCachado = null;
+let expiracionToken = null;
+
+// Función inteligente para obtener el token
+async function obtenerTokenValido() {
+    const ahora = Date.now();
+
+    // 1. Si tenemos token y la hora actual es menor a la de expiración 
+    // (le restamos 1 minuto como margen de seguridad), reutilizamos el token.
+    if (tokenCachado && expiracionToken && ahora < (expiracionToken - 60000)) {
+        console.log("♻️ Usando token OAuth desde la caché");
+        return tokenCachado;
+    }
+
+    // 2. Si no hay token o ya caducó, pedimos uno nuevo
+    console.log("🔑 Solicitando un nuevo token a ORDS...");
+    const clientId = process.env.ORDS_CLIENT_ID;
+    const clientSecret = process.env.ORDS_CLIENT_SECRET;
+    const credencialesBase64 = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
+    const tokenUrl = process.env.ORDS_TOKEN_URL;
+
+    const tokenResponse = await axios.post(tokenUrl, 'grant_type=client_credentials', {
+        headers: {
+            'Authorization': `Basic ${credencialesBase64}`,
+            'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        httpsAgent: new https.Agent({ family: 4 })
+    });
+
+    // 3. Actualizamos la caché
+    tokenCachado = tokenResponse.data.access_token;
+    // expires_in viene en segundos. Lo pasamos a milisegundos y se lo sumamos a la hora actual
+    expiracionToken = ahora + (tokenResponse.data.expires_in * 1000);
+
+    return tokenCachado;
+}
+
 // Manejador para atrapar errores de red y que no se caiga el servidor
 bot.on('polling_error', (error) => {
     console.log(`⚠️ Advertencia de red: ${error.message}`);
@@ -104,25 +142,10 @@ bot.on('voice', async (msg) => {
         bot.sendMessage(chatId, `¡Entendido! Guardando registro de ${datosParseados.endpoint}... ⏳`);
 
         // 6. Enviar los datos a Oracle ORDS
-
-        const clientId = process.env.ORDS_CLIENT_ID;
-        const clientSecret = process.env.ORDS_CLIENT_SECRET;
-        const tokenUrl = process.env.ORDS_TOKEN_URL;
-
-        // A. Crear la credencial en Base64 (Requisito de OAuth2)
-        const credencialesBase64 = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
         
         try {
-            // B. Pedir el Token a ORDS
-            const tokenResponse = await axios.post(tokenUrl, 'grant_type=client_credentials', {
-                headers: {
-                    'Authorization': `Basic ${credencialesBase64}`,
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                },
-                httpsAgent: new https.Agent({ family: 4 })
-            });
-
-            const accessToken = tokenResponse.data.access_token;
+            // Llamamos a nuestra nueva función (ella decide si recicla o pide uno nuevo)
+            const accessToken = await obtenerTokenValido();
 
             // Extraemos a qué ruta (endpoint) debe ir y qué datos (payload) enviar
             const endpointDestino = datosParseados.endpoint; 
@@ -132,6 +155,7 @@ bot.on('voice', async (msg) => {
             const urlFinal = `${ordsBaseUrl}${endpointDestino}/`;
             console.log("URL final:", urlFinal);
             console.log("Datos a enviar:", payload);
+            
             // Hacemos el POST a tu base de datos
             const ordsResponse = await axios.post(urlFinal, payload, {
                 headers: {
