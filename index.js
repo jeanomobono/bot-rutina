@@ -104,7 +104,26 @@ bot.on('voice', async (msg) => {
         bot.sendMessage(chatId, `¡Entendido! Guardando registro de ${datosParseados.endpoint}... ⏳`);
 
         // 6. Enviar los datos a Oracle ORDS
+
+        const clientId = process.env.ORDS_CLIENT_ID;
+        const clientSecret = process.env.ORDS_CLIENT_SECRET;
+        const tokenUrl = process.env.ORDS_TOKEN_URL;
+
+        // A. Crear la credencial en Base64 (Requisito de OAuth2)
+        const credencialesBase64 = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
+        
         try {
+            // B. Pedir el Token a ORDS
+            const tokenResponse = await axios.post(tokenUrl, 'grant_type=client_credentials', {
+                headers: {
+                    'Authorization': `Basic ${credencialesBase64}`,
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                httpsAgent: new https.Agent({ family: 4 })
+            });
+
+            const accessToken = tokenResponse.data.access_token;
+
             // Extraemos a qué ruta (endpoint) debe ir y qué datos (payload) enviar
             const endpointDestino = datosParseados.endpoint; 
             const payload = datosParseados.payload;
@@ -115,7 +134,10 @@ bot.on('voice', async (msg) => {
             console.log("Datos a enviar:", payload);
             // Hacemos el POST a tu base de datos
             const ordsResponse = await axios.post(urlFinal, payload, {
-                // Mantenemos esto por si tu red local también bloquea la salida a OCI
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`, // Aquí enviamos la llave
+                    'Content-Type': 'application/json'
+                },
                 httpsAgent: new https.Agent({ family: 4 }) 
             });
 
