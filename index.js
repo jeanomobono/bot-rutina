@@ -33,7 +33,8 @@ const model = genAI.getGenerativeModel({
     - Si es alimentación: {"endpoint": "alimentacion", "payload": {"cantidad_ml": numero, "metodo": "Biberon", "notas": "texto"}}
     - Si es pañales: {"endpoint": "panales", "payload": {"tipo": "Orina/Deposicion/Mixto/Seco", "notas": "texto"}}
     - Si es medicación: {"endpoint": "medicacion", "payload": {"nombre_medicamento": "texto", "dosis_ml": numero, "notas": "texto"}}
-    - Si es diálisis nocturna: {"endpoint": "dialisis", "payload": {"ultrafiltracion_ml": numero, "drenaje_inicial_ml": numero, "notas": "texto"}}`
+    - Si es diálisis nocturna: {"endpoint": "dialisis", "payload": {"ultrafiltracion_ml": numero, "drenaje_inicial_ml": numero, "notas": "texto"}}
+    - Si es una cita médica: {"endpoint": "citas", "payload": {"peso_kg": numero, "talla_cm": numero, "presion_arterial": "texto", "indicaciones": "texto", "especialista": "texto"}`
 });
 
 // Manejador para atrapar errores de red y que no se caiga el servidor
