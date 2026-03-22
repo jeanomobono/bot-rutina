@@ -151,7 +151,7 @@ END;');
   l_cantidad_infusiones parametros_dialisis.cantidad_infusiones%type;
   l_volumen_infusion_ml parametros_dialisis.volumen_infusion_ml%type;
   l_tiempo_perman_infusion_min parametros_dialisis.tiempo_perman_infusion_min%type;
-  l_tiempo_total_tratam_horas parametros_dialsis.tiempo_total_tratam_horas%type;
+  l_tiempo_total_tratam_horas parametros_dialisis.tiempo_total_tratam_horas%type;
   l_tiene_ultima_infusion parametros_dialisis.tiene_ultima_infusion%type;
   l_volumen_ultima_infusion_ml parametros_dialisis.volumen_ultima_infusion_ml%type;
 BEGIN
