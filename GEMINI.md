@@ -6,7 +6,7 @@ This project is a private Node.js REST API designed to automate the logging of d
 ## Tech Stack
 * **Backend:** Node.js (v20+), Express.js
 * **File Handling:** Multer (for processing `multipart/form-data` audio uploads from the mobile app)
-* **AI Integration:** Gemini API (`@google/generative-ai`, `gemini-2.0-flash` model) for audio-to-JSON extraction.
+* **AI Integration:** Gemini API (`@google/generative-ai`, `gemini-2.5-flash` model) for audio-to-JSON extraction.
 * **Database:** Oracle Database (Autonomous/OCI) exposed via ORDS.
 * **Deployment:** Podman container (`node:20-alpine` image) running on an OCI ARM64 (Ampere) compute instance.
 
